@@ -19,21 +19,24 @@ FEATURES:
 #ifndef TRENDER_H
 #define TRENDER_H
 
-#include <stdbool.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <math.h>
 #ifdef _WIN32
     #include <windows.h>
 #else
+    #define _POSIX_C_SOURCE 200809L
     #include <sys/ioctl.h>
     #include <unistd.h>
     #include <locale.h>
     #include <termios.h>
     #include <time.h>
 #endif
+
+#include <string.h>
+#include <stdbool.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <math.h>
 
 /* Defined T_PI since M_PI (math.h) isn't included in the C99 standard */
 /* Used only by the built-in interpolation functions */
@@ -352,7 +355,7 @@ KeyEvent t_poll_key(void)
 
 void timer_start(Timer *t, double duration_ms)
 {
-    t->start_time = (float)(t_time_ms() - t->start_time);
+    t->start_time = t_time_ms();
     t->duration_ms = duration_ms;
     t->running = true;
 }
@@ -454,7 +457,7 @@ double t_time_ms(void)
     LARGE_INTEGER now;
     if (!initialized) { QueryPerformanceFrequency(&freq); initialized = true; }
     QueryPerformanceCounter(&now);
-    return ((double)now.QuadPart * 1000);
+    return ((double)now.QuadPart * 1000 / (double)freq.QuadPart);
 #else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -472,7 +475,11 @@ void t_wait_fps(int target_fps)
 #ifdef _WIN32
         Sleep((DWORD)(target_ms - elapsed));
 #else
-        usleep((useconds_t)((target_ms - elapsed) * 1000));
+        struct timespec req;
+        double ms = target_ms - elapsed;
+        req.tv_sec  = (time_t)(ms / 1000.0);
+        req.tv_nsec = (long)((ms - req.tv_sec * 1000.0) * 1e6);
+        nanosleep(&req, NULL);
 #endif
     }
     last_frame_time = t_time_ms();

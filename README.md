@@ -57,5 +57,5 @@ Other files that only need the API include `trender.h` without the macro.
 - CM_256 and CM_16 are lightly tested
 
 ## License
-CC BY 4.0, see `LICENSE`. Copyright (c) 2026 ubmanc3r.
+MIT License, see `LICENSE`. Copyright (c) 2026 ubmanc3r.
 
